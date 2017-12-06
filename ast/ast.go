@@ -29,7 +29,8 @@ type Expression interface {
 }
 
 type LetStatement struct {
-	Token token.Token // the token.LET token Name *Identifier
+	Token token.Token // the token.LET token
+	Name  *Identifier
 	Value Expression
 }
 
@@ -39,7 +40,8 @@ func (ls *LetStatement) TokenLiteral() string {
 }
 
 type Identifier struct {
-	Token token.Token // the token.IDENT token Value string
+	Token token.Token // the token.IDENT token
+	Value string
 }
 
 func (i *Identifier) expressionNode() {}
