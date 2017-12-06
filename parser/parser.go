@@ -23,15 +23,13 @@ func (p *Parser) nextToken() {
 	p.curToken = p.peekToken
 	p.peekToken = p.l.NextToken()
 }
-func (p *Parser) ParseProgram() *ast.Program {
-	return nil
-}
 
 func (p *Parser) ParseProgram() *ast.Program {
+	statement := ""
 	program = newProgramASTNode()
-	advanceTokens()
+	l.nextToken()
 	for currentToken() != EOF_TOKEN {
-		statement = null
+		statement = ""
 		if currentToken() == LET_TOKEN {
 			statement = parseLetStatement()
 		} else if currentToken() == RETURN_TOKEN {
@@ -42,9 +40,12 @@ func (p *Parser) ParseProgram() *ast.Program {
 		if statement != null {
 			program.Statements.push(statement)
 		}
-		advanceTokens()
+		l.nextToken()
 	}
 	return program
+}
+func currentToken(l *lexer.Lexer) token.Token {
+	return l.getToken()
 }
 func parseLetStatement() {
 	advanceTokens()
