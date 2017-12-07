@@ -13,8 +13,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Hello %s! This is the Monkey programming language!\n",
+	fmt.Printf("| Welcome to ECS, %s\n",
 		user.Username)
-	fmt.Printf("Feel free to type in commands\n")
+	fmt.Printf("| Interactive Mode\n")
 	repl.Start(os.Stdin, os.Stdout)
 }
