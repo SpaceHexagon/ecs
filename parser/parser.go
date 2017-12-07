@@ -16,15 +16,83 @@ type Parser struct {
 }
 
 func New(l *lexer.Lexer) *Parser {
-	p := &Parser{l: l}
-	// Read two tokens, so curToken and peekToken are both set
+	p := &Parser{
+		l:      l,
+		errors: []string{},
+	}
+
+	// init parser - both curToken and peekToken should be set
 	p.nextToken()
 	p.nextToken()
+
 	return p
 }
+
 func (p *Parser) nextToken() {
 	p.curToken = p.peekToken
 	p.peekToken = p.l.NextToken()
+}
+
+func (p *Parser) ParseProgram() *ast.Program {
+	program := &ast.Program{}
+	program.Statements = []ast.Statement{}
+
+	for !p.curTokenIs(token.EOF) {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			program.Statements = append(program.Statements, stmt)
+		}
+		p.nextToken()
+	}
+
+	return program
+}
+
+func (p *Parser) parseStatement() ast.Statement {
+	switch p.curToken.Type {
+	case token.LET:
+		return p.parseLetStatement()
+	case token.RETURN:
+		return p.parseReturnStatement()
+	default:
+		return nil
+	}
+}
+
+func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
+	stmt := &ast.ReturnStatement{Token: p.curToken}
+
+	p.nextToken()
+
+	// mvp implementation to satisfy our tests
+	// keep skipping until semicolon
+	for !p.curTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseLetStatement() *ast.LetStatement {
+	stmt := &ast.LetStatement{Token: p.curToken}
+
+	if !p.expectPeek(token.IDENT) {
+		return nil
+	}
+
+	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+	if !p.expectPeek(token.ASSIGN) {
+		return nil
+	}
+
+	// mvp implementation to satisfy our tests
+	// keep skipping until semicolon
+	for !p.curTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return stmt
 }
 
 func (p *Parser) curTokenIs(t token.TokenType) bool {
@@ -53,86 +121,3 @@ func (p *Parser) peekError(expectedType token.TokenType) {
 	msg := fmt.Sprintf("expected next token to be %s, got %s instead", expectedType, p.peekToken.Type)
 	p.errors = append(p.errors, msg)
 }
-
-func (p *Parser) ParseProgram() *ast.Program {
-	program := &ast.Program{}
-	program.Statements = []ast.Statement{}
-
-	for !p.curTokenIs(token.EOF) {
-		stmt := p.parseStatement()
-		if stmt != nil {
-			program.Statements = append(program.Statements, stmt)
-		}
-	}
-	return program
-}
-
-func (p *Parser) parseStatement() ast.Statement {
-	switch p.curToken.Type {
-	case token.LET:
-		return p.parseLetStatement()
-	case token.RETURN:
-		return p.parseReturnStatement()
-	default:
-		return nil
-	}
-}
-
-func (p *Parser) parseLetStatement() *ast.LetStatement {
-	stmt := &ast.LetStatement{Token: p.curToken}
-
-	if !p.expectPeek(token.IDENT) {
-		return nil
-	}
-	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-	if !p.expectPeek(token.ASSIGN) {
-		return nil
-	}
-
-	for !p.curTokenIs(token.SEMICOLON) {
-		p.nextToken()
-	}
-
-	return stmt
-}
-
-func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
-	stmt := &ast.ReturnStatement{Token: p.curToken}
-
-	p.nextToken()
-
-	// mvp implementation to satisfy our tests
-	// keep skipping until semicolon
-	for !p.curTokenIs(token.SEMICOLON) {
-		p.nextToken()
-	}
-
-	return stmt
-}
-
-// func (p *Parser) parseIdentifier() {
-// 	identifier = newIdentifierASTNode()
-// 	identifier.token = currentToken()
-// 	return identifier
-// }
-
-// func (p *Parser) parseExpression() {
-// 	if currentToken() == INTEGER_TOKEN {
-// 		if nextToken() == PLUS_TOKEN {
-// 			return parseOperatorExpression()
-// 		} else if nextToken() == SEMICOLON_TOKEN {
-// 			return parseIntegerLiteral()
-// 		}
-// 	} else if currentToken() == LEFT_PAREN {
-// 		return parseGroupedExpression()
-// 	}
-// 	// [...]
-// }
-
-// func (p *Parser) parseOperatorExpression() {
-// 	operatorExpression = newOperatorExpression()
-// 	operatorExpression.left = parseIntegerLiteral()
-// 	operatorExpression.operator = currentToken()
-// 	operatorExpression.right = parseExpression()
-// 	return operatorExpression()
-// }
