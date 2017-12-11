@@ -1,7 +1,6 @@
 package evaluator
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/SpaceHexagon/ecs/object"
@@ -117,25 +116,9 @@ var builtins = map[string]*object.Builtin{
 			arr := args[0].(*object.Array)
 			for _, element := range arr.Elements {
 				s := ""
-				if element.Type() != object.STRING_OBJ && element.Type() != object.INTEGER_OBJ && element.Type() != object.BOOLEAN_OBJ {
-					return newError("array must only contain STRING,ITEGER and BOOL got %s",
-						element.Type())
-				}
-				if element.Type() == object.INTEGER_OBJ {
-					s = strconv.Itoa(int(element.(*object.Integer).Value))
-				} else if element.Type() == object.BOOLEAN_OBJ {
-					if element.(*object.Boolean).Value {
-						s = "true"
-					} else {
-						s = "false"
-					}
-				} else {
-					s = element.(*object.String).Value
-				}
+				s = element.Inspect()
 				strArray = append(strArray, s)
-
 			}
-
 			outStr := strings.Join(strArray, args[1].(*object.String).Value)
 			return &object.String{Value: outStr}
 		},
