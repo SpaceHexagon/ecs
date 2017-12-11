@@ -38,6 +38,7 @@ const (
 
 	// Keywords
 	FUNCTION = "FUNCTION"
+	STRING   = "STRING"
 	LET      = "LET"
 	IF       = "IF"
 	ELSE     = "ELSE"

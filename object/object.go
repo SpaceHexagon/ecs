@@ -21,6 +21,7 @@ const (
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
 	ERROR_OBJ        = "ERROR"
 	FUNCTION_OBJ     = "FUNCTION"
+	STRING_OBJ       = "STRING_OBJ"
 )
 
 type Null struct{}
@@ -71,50 +72,16 @@ func (f *Function) Inspect() string {
 	return out.String()
 }
 
+type String struct {
+	Value string
+}
+
+func (s *String) Type() ObjectType { return STRING_OBJ }
+func (s *String) Inspect() string  { return s.Value }
+
 type Error struct {
 	Message string
 }
 
 func (e *Error) Type() ObjectType { return ERROR_OBJ }
 func (e *Error) Inspect() string  { return "ERROR: " + e.Message }
-
-func NewEnvironment() *Environment {
-	s := make(map[string]Object)
-	return &Environment{store: s, outer: nil}
-}
-
-type Environment struct {
-	store map[string]Object
-}
-
-func (e *Environment) Get(name string) (Object, bool) {
-	obj, ok := e.store[name]
-	return obj, ok
-}
-func (e *Environment) Set(name string, val Object) Object {
-	e.store[name] = val
-	return val
-}
-
-func NewEnclosedEnvironment(outer *Environment) *Environment {
-	env := NewEnvironment()
-	env.outer = outer
-	return env
-}
-
-type Environment struct {
-	store map[string]Object
-	outer *Environment
-}
-
-func (e *Environment) Get(name string) (Object, bool) {
-	obj, ok := e.store[name]
-	if !ok && e.outer != nil {
-		obj, ok = e.outer.Get(name)
-	}
-	return obj, ok
-}
-func (e *Environment) Set(name string, val Object) Object {
-	e.store[name] = val
-	return val
-}
