@@ -1,6 +1,11 @@
 package evaluator
 
-import "github.com/SpaceHexagon/ecs/object"
+import (
+	"strconv"
+	"strings"
+
+	"github.com/SpaceHexagon/ecs/object"
+)
 
 var builtins = map[string]*object.Builtin{
 	"len": &object.Builtin{
@@ -92,6 +97,47 @@ var builtins = map[string]*object.Builtin{
 			copy(newElements, arr.Elements)
 			newElements[length] = args[1]
 			return &object.Array{Elements: newElements}
+		},
+	},
+	"join": &object.Builtin{
+		Fn: func(args ...object.Object) object.Object {
+			if len(args) != 2 {
+				return newError("wrong number of arguments. got=%d, want=2",
+					len(args))
+			}
+			if args[0].Type() != object.ARRAY_OBJ {
+				return newError("first argument to `join` must be ARRAY, got %s",
+					args[0].Type())
+			}
+			if args[1].Type() != object.STRING_OBJ {
+				return newError("second argument to `join` must be STRING, got %s",
+					args[0].Type())
+			}
+			strArray := []string{}
+			arr := args[0].(*object.Array)
+			for _, element := range arr.Elements {
+				s := ""
+				if element.Type() != object.STRING_OBJ && element.Type() != object.INTEGER_OBJ && element.Type() != object.BOOLEAN_OBJ {
+					return newError("array must only contain STRING,ITEGER and BOOL got %s",
+						element.Type())
+				}
+				if element.Type() == object.INTEGER_OBJ {
+					s = strconv.Itoa(int(element.(*object.Integer).Value))
+				} else if element.Type() == object.BOOLEAN_OBJ {
+					if element.(*object.Boolean).Value {
+						s = "true"
+					} else {
+						s = "false"
+					}
+				} else {
+					s = element.(*object.String).Value
+				}
+				strArray = append(strArray, s)
+
+			}
+
+			outStr := strings.Join(strArray, args[1].(*object.String).Value)
+			return &object.String{Value: outStr}
 		},
 	},
 }
