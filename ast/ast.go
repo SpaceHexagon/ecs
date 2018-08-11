@@ -231,6 +231,33 @@ func (ls *LetStatement) String() string {
 	return out.String()
 }
 
+/*
+export class ClassStatement implements Statement {
+	constructor(
+		public Token:  token.Token, // the token.LET token
+		public Name?:  Identifier,
+		public Value?: HashLiteral,
+		public NodeName: string = "ClassStatement"
+	) {
+	}
+	public statementNode() {}
+	public TokenLiteral(): string {
+		return this.Token.Literal
+	}
+	public String(): string {
+		var out:string
+		out += this.TokenLiteral() + " "
+		out += this.Name.String()
+		out += " = "
+		if (this.Value != null) {
+			out += this.Value.String()
+		}
+		out += ";"
+		return out;
+	}
+}
+*/
+
 type ReturnStatement struct {
 	Token       token.Token // the 'return' token
 	ReturnValue Expression

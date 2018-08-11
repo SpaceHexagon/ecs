@@ -10,65 +10,65 @@ import (
 )
 
 var builtins = map[string]*object.Builtin{
-	// "PI": &object.Builtin{
-	// 	Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
-	// 		return &object.Integer{Value: math.Pi}
-	// 	},
-	// },
-	// "sin": &object.Builtin{
-	// 	Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
-	// 		if len(args) != 1 {
-	// 			return newError("wrong number of arguments. got=%d, want=1", len(args))
-	// 		}
-	// 		if args[0].Type() != object.INTEGER_OBJ {
-	// 			return newError("argument to `sin` must be INTEGER, got %s", args[0].Type())
-	// 		}
+	"PI": &object.Builtin{
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+			return &object.Float{Value: math.Pi}
+		},
+	},
+	"sin": &object.Builtin{
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments. got=%d, want=1", len(args))
+			}
+			if args[0].Type() != object.FLOAT_OBJ {
+				return newError("argument to `sin` must be INTEGER, got %s", args[0].Type())
+			}
 
-	// 		return &object.Integer{Value: math.Sin(args[0].(*object.Integer).Value)}
-	// 	},
-	// },
-	// "cos": &object.Builtin{
-	// 	Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
-	// 		if len(args) != 1 {
-	// 			return newError("wrong number of arguments. got=%d, want=1", len(args))
-	// 		}
-	// 		if args[0].Type() != object.INTEGER_OBJ {
-	// 			return newError("argument to `cos` must be INTEGER, got %s", args[0].Type())
-	// 		}
-	// 		return &object.Integer{Value: math.Cos(args[0].Value)}
-	// 	},
-	// },
-	// "tan": &object.Builtin{
-	// 	Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
-	// 		if len(args) != 1 {
-	// 			return newError("wrong number of arguments. got=%d, want=1", len(args))
-	// 		}
-	// 		if args[0].Type() != object.INTEGER_OBJ {
-	// 			return newError("argument to `cos` must be INTEGER, got %s", args[0].Type())
-	// 		}
-	// 		return &object.Integer{Value: math.Tan(args[0].Value)}
-	// 	},
-	// },
-	// "atan2": &object.Builtin{
-	// 	Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
-	// 		if len(args) != 2 {
-	// 			return newError("wrong number of arguments. got=%d, want=2", len(args))
-	// 		}
-	// 		if args[0].Type() != object.INTEGER_OBJ || args[1].Type() != object.INTEGER_OBJ {
-	// 			return newError("argument to `atan2` must be INTEGER, got %s %s", args[0].Type(), args[1].Type())
-	// 		}
-	// 		return &object.Integer{Value: math.Atan2(args[0].Value, args[1].Value)}
-	// 	},
-	// },
+			return &object.Float{Value: math.Sin(args[0].(*object.Float).Value)}
+		},
+	},
+	"cos": &object.Builtin{
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments. got=%d, want=1", len(args))
+			}
+			if args[0].Type() != object.FLOAT_OBJ {
+				return newError("argument to `cos` must be FLOAT_OBJ, got %s", args[0].Type())
+			}
+			return &object.Float{Value: math.Cos(args[0].(*object.Float).Value)}
+		},
+	},
+	"tan": &object.Builtin{
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments. got=%d, want=1", len(args))
+			}
+			if args[0].Type() != object.FLOAT_OBJ {
+				return newError("argument to `cos` must be FLOAT_OBJ, got %s", args[0].Type())
+			}
+			return &object.Float{Value: math.Tan(args[0].(*object.Float).Value)}
+		},
+	},
+	"atan2": &object.Builtin{
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+			if len(args) != 2 {
+				return newError("wrong number of arguments. got=%d, want=2", len(args))
+			}
+			if args[0].Type() != object.FLOAT_OBJ || args[1].Type() != object.FLOAT_OBJ {
+				return newError("argument to `atan2` must be FLOAT_OBJ, got %s %s", args[0].Type(), args[1].Type())
+			}
+			return &object.Float{Value: math.Atan2(args[0].(*object.Float).Value, args[1].(*object.Float).Value)}
+		},
+	},
 	"sqrt": &object.Builtin{
 		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1", len(args))
 			}
-			if args[0].Type() != object.INTEGER_OBJ {
-				return newError("argument to `cos` must be INTEGER, got %s", args[0].Type())
+			if args[0].Type() != object.FLOAT_OBJ && args[0].Type() != object.INTEGER_OBJ {
+				return newError("argument to `cos` must be INTEGER or FLOAT, got %s", args[0].Type())
 			}
-			return &object.Integer{Value: int64(math.Sqrt(float64(args[0].(*object.Integer).Value)))}
+			return &object.Float{Value: math.Sqrt(float64(args[0].(*object.Integer).Value))}
 		},
 	},
 	"abs": &object.Builtin{
@@ -76,45 +76,45 @@ var builtins = map[string]*object.Builtin{
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1", len(args))
 			}
-			if args[0].Type() != object.INTEGER_OBJ {
+			if args[0].Type() != object.FLOAT_OBJ && args[0].Type() != object.INTEGER_OBJ {
 				return newError("argument to `abs` must be INTEGER, got %s", args[0].Type())
 			}
-			return &object.Integer{Value: int64(math.Abs(float64(args[0].(*object.Integer).Value)))}
+			return &object.Float{Value: math.Abs(float64(args[0].(*object.Integer).Value))}
 		},
 	},
-	// "floor": &object.Builtin{
-	// 	Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
-	// 		if len(args) != 1 {
-	// 			return newError("wrong number of arguments. got=%d, want=1", len(args))
-	// 		}
-	// 		if args[0].Type() != object.INTEGER_OBJ {
-	// 			return newError("argument to `abs` must be INTEGER, got %s", args[0].Type())
-	// 		}
-	// 		return &object.Integer{Value: args[0].(*object.Integer).Value - math.Floor(args[0].(*object.Integer).Value)}
-	// 	},
-	// },
-	// "ceil": &object.Builtin{
-	// 	Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
-	// 		if len(args) != 1 {
-	// 			return newError("wrong number of arguments. got=%d, want=1", len(args))
-	// 		}
-	// 		if args[0].Type() != object.INTEGER_OBJ {
-	// 			return newError("argument to `abs` must be INTEGER, got %s", args[0].Type())
-	// 		}
-	// 		return &object.Integer{Value: math.Ceil(int64(args[0].Value))}
-	// 	},
-	// },
-	// "fract": &object.Builtin{
-	// 	Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
-	// 		if len(args) != 1 {
-	// 			return newError("wrong number of arguments. got=%d, want=1", len(args))
-	// 		}
-	// 		if args[0].Type() != object.INTEGER_OBJ {
-	// 			return newError("argument to `abs` must be INTEGER, got %s", args[0].Type())
-	// 		}
-	// 		return &object.Integer{Value: args[0].(*object.Integer).Value - math.Floor(args[0].(*object.Integer).Value)}
-	// 	},
-	// },
+	"floor": &object.Builtin{
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments. got=%d, want=1", len(args))
+			}
+			if args[0].Type() != object.FLOAT_OBJ {
+				return newError("argument to `abs` must be FLOAT_OBJ, got %s", args[0].Type())
+			}
+			return &object.Float{Value: args[0].(*object.Float).Value - math.Floor(args[0].(*object.Float).Value)}
+		},
+	},
+	"ceil": &object.Builtin{
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments. got=%d, want=1", len(args))
+			}
+			if args[0].Type() != object.FLOAT_OBJ {
+				return newError("argument to `abs` must be FLOAT_OBJ, got %s", args[0].Type())
+			}
+			return &object.Float{Value: math.Ceil(args[0].(*object.Float).Value)}
+		},
+	},
+	"fract": &object.Builtin{
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments. got=%d, want=1", len(args))
+			}
+			if args[0].Type() != object.FLOAT_OBJ {
+				return newError("argument to `abs` must be FLOAT_OBJ, got %s", args[0].Type())
+			}
+			return &object.Float{Value: args[0].(*object.Float).Value - math.Floor(args[0].(*object.Float).Value)}
+		},
+	},
 	"time": &object.Builtin{
 		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
 
