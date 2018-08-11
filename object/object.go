@@ -28,7 +28,7 @@ const (
 	HASH_OBJ         = "HASH"
 )
 
-type BuiltinFunction func(args ...Object) Object
+type BuiltinFunction func(context interface{}, scope interface{}, args ...Object) Object
 type Null struct{}
 
 func (n *Null) Type() ObjectType { return NULL_OBJ }

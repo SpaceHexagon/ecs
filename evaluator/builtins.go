@@ -2,14 +2,127 @@ package evaluator
 
 import (
 	"fmt"
+	"math"
 	"strings"
+	"time"
 
 	"github.com/SpaceHexagon/ecs/object"
 )
 
 var builtins = map[string]*object.Builtin{
-	"puts": &object.Builtin{
-		Fn: func(args ...object.Object) object.Object {
+	// "PI": &object.Builtin{
+	// 	Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+	// 		return &object.Integer{Value: math.Pi}
+	// 	},
+	// },
+	// "sin": &object.Builtin{
+	// 	Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+	// 		if len(args) != 1 {
+	// 			return newError("wrong number of arguments. got=%d, want=1", len(args))
+	// 		}
+	// 		if args[0].Type() != object.INTEGER_OBJ {
+	// 			return newError("argument to `sin` must be INTEGER, got %s", args[0].Type())
+	// 		}
+
+	// 		return &object.Integer{Value: math.Sin(args[0].(*object.Integer).Value)}
+	// 	},
+	// },
+	// "cos": &object.Builtin{
+	// 	Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+	// 		if len(args) != 1 {
+	// 			return newError("wrong number of arguments. got=%d, want=1", len(args))
+	// 		}
+	// 		if args[0].Type() != object.INTEGER_OBJ {
+	// 			return newError("argument to `cos` must be INTEGER, got %s", args[0].Type())
+	// 		}
+	// 		return &object.Integer{Value: math.Cos(args[0].Value)}
+	// 	},
+	// },
+	// "tan": &object.Builtin{
+	// 	Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+	// 		if len(args) != 1 {
+	// 			return newError("wrong number of arguments. got=%d, want=1", len(args))
+	// 		}
+	// 		if args[0].Type() != object.INTEGER_OBJ {
+	// 			return newError("argument to `cos` must be INTEGER, got %s", args[0].Type())
+	// 		}
+	// 		return &object.Integer{Value: math.Tan(args[0].Value)}
+	// 	},
+	// },
+	// "atan2": &object.Builtin{
+	// 	Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+	// 		if len(args) != 2 {
+	// 			return newError("wrong number of arguments. got=%d, want=2", len(args))
+	// 		}
+	// 		if args[0].Type() != object.INTEGER_OBJ || args[1].Type() != object.INTEGER_OBJ {
+	// 			return newError("argument to `atan2` must be INTEGER, got %s %s", args[0].Type(), args[1].Type())
+	// 		}
+	// 		return &object.Integer{Value: math.Atan2(args[0].Value, args[1].Value)}
+	// 	},
+	// },
+	"sqrt": &object.Builtin{
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments. got=%d, want=1", len(args))
+			}
+			if args[0].Type() != object.INTEGER_OBJ {
+				return newError("argument to `cos` must be INTEGER, got %s", args[0].Type())
+			}
+			return &object.Integer{Value: int64(math.Sqrt(float64(args[0].(*object.Integer).Value)))}
+		},
+	},
+	"abs": &object.Builtin{
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments. got=%d, want=1", len(args))
+			}
+			if args[0].Type() != object.INTEGER_OBJ {
+				return newError("argument to `abs` must be INTEGER, got %s", args[0].Type())
+			}
+			return &object.Integer{Value: int64(math.Abs(float64(args[0].(*object.Integer).Value)))}
+		},
+	},
+	// "floor": &object.Builtin{
+	// 	Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+	// 		if len(args) != 1 {
+	// 			return newError("wrong number of arguments. got=%d, want=1", len(args))
+	// 		}
+	// 		if args[0].Type() != object.INTEGER_OBJ {
+	// 			return newError("argument to `abs` must be INTEGER, got %s", args[0].Type())
+	// 		}
+	// 		return &object.Integer{Value: args[0].(*object.Integer).Value - math.Floor(args[0].(*object.Integer).Value)}
+	// 	},
+	// },
+	// "ceil": &object.Builtin{
+	// 	Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+	// 		if len(args) != 1 {
+	// 			return newError("wrong number of arguments. got=%d, want=1", len(args))
+	// 		}
+	// 		if args[0].Type() != object.INTEGER_OBJ {
+	// 			return newError("argument to `abs` must be INTEGER, got %s", args[0].Type())
+	// 		}
+	// 		return &object.Integer{Value: math.Ceil(int64(args[0].Value))}
+	// 	},
+	// },
+	// "fract": &object.Builtin{
+	// 	Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+	// 		if len(args) != 1 {
+	// 			return newError("wrong number of arguments. got=%d, want=1", len(args))
+	// 		}
+	// 		if args[0].Type() != object.INTEGER_OBJ {
+	// 			return newError("argument to `abs` must be INTEGER, got %s", args[0].Type())
+	// 		}
+	// 		return &object.Integer{Value: args[0].(*object.Integer).Value - math.Floor(args[0].(*object.Integer).Value)}
+	// 	},
+	// },
+	"time": &object.Builtin{
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+
+			return &object.Integer{Value: time.Now().Unix()}
+		},
+	},
+	"print": &object.Builtin{
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
 			for _, arg := range args {
 				fmt.Println(arg.Inspect())
 			}
@@ -17,7 +130,7 @@ var builtins = map[string]*object.Builtin{
 		},
 	},
 	"len": &object.Builtin{
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1",
 					len(args))
@@ -35,7 +148,7 @@ var builtins = map[string]*object.Builtin{
 		},
 	},
 	"first": &object.Builtin{
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1",
 					len(args))
@@ -52,7 +165,7 @@ var builtins = map[string]*object.Builtin{
 		},
 	},
 	"last": &object.Builtin{
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1",
 					len(args))
@@ -70,7 +183,7 @@ var builtins = map[string]*object.Builtin{
 		},
 	},
 	"rest": &object.Builtin{
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1",
 					len(args))
@@ -90,7 +203,7 @@ var builtins = map[string]*object.Builtin{
 		},
 	},
 	"push": &object.Builtin{
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
 			if len(args) != 2 {
 				return newError("wrong number of arguments. got=%d, want=2",
 					len(args))
@@ -108,7 +221,7 @@ var builtins = map[string]*object.Builtin{
 		},
 	},
 	"join": &object.Builtin{
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
 			if len(args) != 2 {
 				return newError("wrong number of arguments. got=%d, want=2",
 					len(args))

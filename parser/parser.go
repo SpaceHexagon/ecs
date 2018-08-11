@@ -17,6 +17,7 @@ type (
 const (
 	_ int = iota
 	LOWEST
+	LOGICAL     // || or &&
 	EQUALS      // ==
 	LESSGREATER // > or <
 	SUM         // +
@@ -29,12 +30,17 @@ const (
 var precedences = map[token.TokenType]int{
 	token.EQ:       EQUALS,
 	token.NOT_EQ:   EQUALS,
+	token.AND:      LOGICAL,
+	token.OR:       LOGICAL,
+	token.TYPEOF:   LESSGREATER,
 	token.LT:       LESSGREATER,
 	token.GT:       LESSGREATER,
 	token.PLUS:     SUM,
 	token.MINUS:    SUM,
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
+	token.MOD:      PRODUCT,
+	token.DOT:      CALL,
 	token.LPAREN:   CALL,
 	token.LBRACKET: INDEX,
 }
