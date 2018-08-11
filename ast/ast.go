@@ -173,41 +173,56 @@ func (ce *CallExpression) String() string {
 	return out.String()
 }
 
-// export class NewExpression implements Expression {
-// 	constructor(
-// 		public Token:  token.Token, // the token.NEW token
-// 		public Name?:  Identifier,
-// 		public NodeName: string = "NewExpression"
-// 	) {
-// 	}
-// 	public expressionNode()      {}
-// 	public TokenLiteral(): string {
-// 		return this.Token.Literal
-// 	}
-// 	public String(): string {
-// 		var out = this.TokenLiteral() + " " + out + this.Name.String()
+type NewExpression struct {
+	Token token.Token // the token.NEW token
+	Name  *Identifier
+}
 
-// 		return out;
-// 	}
-// }
+func (ce *NewExpression) expressionNode() {}
+func (ce *NewExpression) TokenLiteral() string {
+	return ce.Token.Literal
+}
+func (ce *NewExpression) String() string {
+	out := ce.TokenLiteral() + " " + ce.Name.String()
 
-// export class ExecExpression implements Expression {
-// 	constructor(
-// 		public Token:  token.Token, // the token.NEW token
-// 		public Name?:  Expression,
-// 		public NodeName: string = "ExecExpression"
-// 	) {
-// 	}
-// 	public expressionNode()      {}
-// 	public TokenLiteral(): string {
-// 		return this.Token.Literal
-// 	}
-// 	public String(): string {
-// 		var out = this.TokenLiteral() + " " + out + this.Name.String()
+	return out
+}
 
-// 		return out;
-// 	}
-// }
+type ExecExpression struct {
+	Token token.Token // the token.NEW token
+	Name  Expression
+}
+
+func (ce *ExecExpression) expressionNode() {}
+func (ce *ExecExpression) TokenLiteral() string {
+	return ce.Token.Literal
+}
+func (ce *ExecExpression) String() string {
+	out := ce.TokenLiteral() + " " + ce.Name.String()
+
+	return out
+}
+
+type AssignmentStatement struct {
+	Name  Identifier
+	Value Expression
+}
+
+func (as *AssignmentStatement) statementNode() {}
+func (as *AssignmentStatement) TokenLiteral() string {
+	return as.Name.Value
+}
+func (as *AssignmentStatement) String() string {
+	var out string = ""
+
+	out += as.Name.String()
+	out += " = "
+	if as.Value != nil {
+		out += as.Value.String()
+	}
+	out += ";"
+	return out
+}
 
 type LetStatement struct {
 	Token token.Token // the token.LET token
@@ -322,29 +337,24 @@ func (ie *IndexExpression) String() string {
 	return out.String()
 }
 
-/*
-export class IndexAssignmentExpression implements Expression {
-	constructor(
-		public Token: token.Token, // The [ token
-		public Left:  Expression,
-		public Index?: Expression,
-		public Assignment?: Expression,
-		public NodeName: string = "IndexAssignmentExpression"
-	) {
+type IndexAssignmentExpression struct {
+	Token      token.Token // The [ token
+	Left       Expression
+	Index      Expression
+	Assignment Expression
+}
 
-	}
-	public expressionNode()      {}
-	public TokenLiteral(): string { return this.Token.Literal }
-	public String(): string {
-		var out:string = "";
-		out += this.Left.String();
-		out += ".";
-		out += this.Index.String();
-		out += "=";
-		out += this.Assignment.String();
-		return out;
-	}
-} */
+func (iae *IndexAssignmentExpression) expressionNode()      {}
+func (iae *IndexAssignmentExpression) TokenLiteral() string { return iae.Token.Literal }
+func (iae *IndexAssignmentExpression) String() string {
+	out := ""
+	out += iae.Left.String()
+	out += "."
+	out += iae.Index.String()
+	out += "="
+	out += iae.Assignment.String()
+	return out
+}
 
 type Identifier struct {
 	Token token.Token // the token.IDENT token
@@ -360,6 +370,7 @@ func (i *Identifier) TokenLiteral() string {
 type StringLiteral struct {
 	Token token.Token
 	Value string
+	Node
 }
 
 func (sl *StringLiteral) expressionNode()      {}

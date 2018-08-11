@@ -317,31 +317,38 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	return exp
 }
 
-// func (p *Parser) parseDotIndexExpression(left ast.Expression) ast.Expression {
-// 	let exp = null,
-// 		Index = null;
-// 	let bracketAndLeft: [token.Token, ast.Expression] = [this.curToken, left];
+type TokenExpressionPair struct {
+	token      token.Token
+	expression ast.Expression
+}
 
-// 	if (this.peekTokenIs(token.IDENT)) {
-// 		this.nextToken();
-// 		let identValue = this.curToken.Literal;
-// 		Index = new ast.StringLiteral({ Type: token.STRING, Literal: identValue }, identValue);
-// 	} else {
-// 		// this.nextToken()
-// 		Index = this.parseExpression(LOWEST);
-// 	}
+func (p *Parser) parseDotIndexExpression(left ast.Expression) ast.Expression {
 
-// 	if (!this.peekTokenIs(token.ASSIGN)) {
-// 		exp = new ast.IndexExpression(bracketAndLeft[0], bracketAndLeft[1]);
-// 	} else {
-// 		exp = new ast.IndexAssignmentExpression(bracketAndLeft[0], bracketAndLeft[1]);
-// 		this.nextToken();
-// 		this.nextToken();
-// 		exp.Assignment = this.parseExpression(LOWEST);
-// 	}
-// 	exp.Index = Index;
-// 	return exp;
-// }
+	bracketAndLeft := TokenExpressionPair{p.curToken, left}
+	var (
+		Index ast.Expression
+	)
+	if p.peekTokenIs(token.IDENT) {
+		p.nextToken()
+		identValue := p.curToken.Literal
+		Index = &ast.StringLiteral{Token: p.curToken, Value: identValue}
+	} else {
+		Index = p.parseExpression(LOWEST)
+	}
+
+	if !p.peekTokenIs(token.ASSIGN) {
+		exp := &ast.IndexExpression{Token: bracketAndLeft.token, Left: bracketAndLeft.expression}
+		exp.Index = Index
+		return exp
+	} else {
+		exp := &ast.IndexAssignmentExpression{Token: bracketAndLeft.token, Left: bracketAndLeft.expression}
+		p.nextToken()
+		p.nextToken()
+		exp.Assignment = p.parseExpression(LOWEST)
+		exp.Index = Index
+		return exp
+	}
+}
 
 func (p *Parser) parseCallArguments() []ast.Expression {
 	args := []ast.Expression{}
@@ -392,39 +399,39 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	return stmt
 }
 
-func (p *Parser)  parseNewExpression() expressions.Expression {
-	let exp = new expressions.NewExpression(this.curToken);
-	if (!this.expectPeek(token.IDENT)) {
-		return null;
+func (p *Parser) parseNewExpression() ast.Expression {
+	exp := &ast.NewExpression{Token: p.curToken}
+	if !p.expectPeek(token.IDENT) {
+		return nil
 	}
-	exp.Name = new literal.Identifier(this.curToken, this.curToken.Literal);
+	exp.Name = &ast.Identifier{p.curToken, p.curToken.Literal}
 
-	return exp;
-};
+	return exp
+}
 
-func (p *Parser)  parseExecExpression() expressions.Expression {
-	let exp = new expressions.ExecExpression(this.curToken);
-	if (!this.expectPeek(token.STRING)) {
-		return null;
+func (p *Parser) parseExecExpression() ast.Expression {
+	exp := &ast.ExecExpression{Token: p.curToken}
+	if !p.expectPeek(token.STRING) {
+		return nil
 	}
-	exp.Name = new literal.StringLiteral(this.curToken, this.curToken.Literal);
+	exp.Name = &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
 
-	return exp;
-};
+	return exp
+}
 
-func (p *Parser)  parseAssignmentStatement() statement.AssignmentStatement {
-	let stmt = new statement.AssignmentStatement(new literal.Identifier(this.curToken, this.curToken.Literal));
+func (p *Parser) parseAssignmentStatement() *ast.AssignmentStatement {
+	stmt := &ast.AssignmentStatement{Name: ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}}
 
-	if (!this.expectPeek(token.ASSIGN)) {
-		return null;
+	if !p.expectPeek(token.ASSIGN) {
+		return nil
 	}
-	this.nextToken();
-	stmt.Value = this.parseExpression(LOWEST);
-	if (this.peekTokenIs(token.SEMICOLON)) {
-		this.nextToken();
+	p.nextToken()
+	stmt.Value = p.parseExpression(LOWEST)
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
 	}
-	return stmt;
-};
+	return stmt
+}
 
 func (p *Parser) parseLetStatement() *ast.LetStatement {
 	stmt := &ast.LetStatement{Token: p.curToken}
@@ -444,18 +451,18 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 }
 
 // func (p *Parser) parseClassStatement = (): ast.ClassStatement => {
-// 	let stmt = new ast.ClassStatement(this.curToken);
+// 	let stmt = new ast.ClassStatement(p.curToken);
 
-// 	if (!this.expectPeek(token.IDENT)) {
+// 	if (!p.expectPeek(token.IDENT)) {
 // 		return null;
 // 	}
 
-// 	stmt.Name = new literal.Identifier(this.curToken, this.curToken.Literal);
-// 	this.nextToken();
-// 	stmt.Value = <ast.HashLiteral>this.parseHashLiteral(true);
+// 	stmt.Name = new literal.Identifier(p.curToken, p.curToken.Literal);
+// 	p.nextToken();
+// 	stmt.Value = <ast.HashLiteral>p.parseHashLiteral(true);
 
-// 	if (this.peekTokenIs(token.SEMICOLON)) {
-// 		this.nextToken();
+// 	if (p.peekTokenIs(token.SEMICOLON)) {
+// 		p.nextToken();
 // 	}
 // 	return stmt;
 // }
