@@ -17,6 +17,7 @@ type Object interface {
 
 const (
 	INTEGER_OBJ      = "INTEGER"
+	FLOAT_OBJ        = "FLOAT"
 	BOOLEAN_OBJ      = "BOOLEAN"
 	NULL_OBJ         = "NULL"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
@@ -34,6 +35,13 @@ type Null struct{}
 func (n *Null) Type() ObjectType { return NULL_OBJ }
 func (n *Null) Inspect() string  { return "null" }
 
+type Boolean struct {
+	Value bool
+}
+
+func (b *Boolean) Type() ObjectType { return BOOLEAN_OBJ }
+func (b *Boolean) Inspect() string  { return fmt.Sprintf("%t", b.Value) }
+
 type Integer struct {
 	Value int64
 }
@@ -41,12 +49,12 @@ type Integer struct {
 func (i *Integer) Inspect() string  { return fmt.Sprintf("%d", i.Value) }
 func (i *Integer) Type() ObjectType { return INTEGER_OBJ }
 
-type Boolean struct {
-	Value bool
+type Float struct {
+	Value float64
 }
 
-func (b *Boolean) Type() ObjectType { return BOOLEAN_OBJ }
-func (b *Boolean) Inspect() string  { return fmt.Sprintf("%t", b.Value) }
+func (f *Float) Inspect() string  { return fmt.Sprintf("%d", f.Value) }
+func (f *Float) Type() ObjectType { return FLOAT_OBJ }
 
 type ReturnValue struct {
 	Value Object

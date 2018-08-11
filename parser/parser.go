@@ -74,17 +74,23 @@ func New(l *lexer.Lexer) *Parser {
 		errors: []string{},
 	}
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
+	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
 	p.registerInfix(token.MINUS, p.parseInfixExpression)
 	p.registerInfix(token.SLASH, p.parseInfixExpression)
 	p.registerInfix(token.ASTERISK, p.parseInfixExpression)
+	p.registerInfix(token.MOD, p.parseInfixExpression)
 	p.registerInfix(token.EQ, p.parseInfixExpression)
 	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
+	p.registerInfix(token.AND, p.parseInfixExpression)
+	p.registerInfix(token.OR, p.parseInfixExpression)
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
 	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
-	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	p.registerInfix(token.DOT, p.parseDotIndexExpression)
+
 	p.registerPrefix(token.IDENT, p.parseIdentifier)
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
@@ -93,6 +99,9 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.TRUE, p.parseBoolean)
 	p.registerPrefix(token.FALSE, p.parseBoolean)
 	p.registerPrefix(token.IF, p.parseIfExpression)
+	p.registerPrefix(token.FOR, p.parseForExpression)
+	p.registerPrefix(token.WHILE, p.parseWhileExpression)
+	p.registerPrefix(token.SLEEP, p.parseSleepExpression)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
 	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
@@ -217,6 +226,72 @@ func (p *Parser) parseIfExpression() ast.Expression {
 	return expression
 }
 
+func (p *Parser) parseForExpression() ast.Expression {
+	expression := &ast.ForExpression{Token: p.curToken}
+
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+	if !p.expectPeek(token.IDENT) {
+		return nil
+	}
+	expression.Element = ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	if !p.expectPeek(token.COMMA) {
+		return nil
+	}
+
+	p.nextToken()
+	expression.Range = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+	expression.Consequence = p.parseBlockStatement()
+
+	return expression
+}
+
+func (p *Parser) parseWhileExpression() ast.Expression {
+	expression := &ast.WhileExpression{Token: p.curToken}
+
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+	p.nextToken()
+	expression.Condition = p.parseExpression(LOWEST)
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+	expression.Consequence = p.parseBlockStatement()
+
+	return expression
+}
+
+func (p *Parser) parseSleepExpression() ast.Expression {
+	expression := &ast.SleepExpression{Token: p.curToken}
+
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+	p.nextToken()
+	expression.Duration = p.parseExpression(LOWEST)
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+	expression.Consequence = p.parseBlockStatement()
+
+	return expression
+}
+
 func (p *Parser) parseGroupedExpression() ast.Expression {
 	p.nextToken()
 	exp := p.parseExpression(LOWEST)
@@ -241,6 +316,32 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	}
 	return exp
 }
+
+// func (p *Parser) parseDotIndexExpression(left ast.Expression) ast.Expression {
+// 	let exp = null,
+// 		Index = null;
+// 	let bracketAndLeft: [token.Token, ast.Expression] = [this.curToken, left];
+
+// 	if (this.peekTokenIs(token.IDENT)) {
+// 		this.nextToken();
+// 		let identValue = this.curToken.Literal;
+// 		Index = new ast.StringLiteral({ Type: token.STRING, Literal: identValue }, identValue);
+// 	} else {
+// 		// this.nextToken()
+// 		Index = this.parseExpression(LOWEST);
+// 	}
+
+// 	if (!this.peekTokenIs(token.ASSIGN)) {
+// 		exp = new ast.IndexExpression(bracketAndLeft[0], bracketAndLeft[1]);
+// 	} else {
+// 		exp = new ast.IndexAssignmentExpression(bracketAndLeft[0], bracketAndLeft[1]);
+// 		this.nextToken();
+// 		this.nextToken();
+// 		exp.Assignment = this.parseExpression(LOWEST);
+// 	}
+// 	exp.Index = Index;
+// 	return exp;
+// }
 
 func (p *Parser) parseCallArguments() []ast.Expression {
 	args := []ast.Expression{}
@@ -291,6 +392,40 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	return stmt
 }
 
+func (p *Parser)  parseNewExpression() expressions.Expression {
+	let exp = new expressions.NewExpression(this.curToken);
+	if (!this.expectPeek(token.IDENT)) {
+		return null;
+	}
+	exp.Name = new literal.Identifier(this.curToken, this.curToken.Literal);
+
+	return exp;
+};
+
+func (p *Parser)  parseExecExpression() expressions.Expression {
+	let exp = new expressions.ExecExpression(this.curToken);
+	if (!this.expectPeek(token.STRING)) {
+		return null;
+	}
+	exp.Name = new literal.StringLiteral(this.curToken, this.curToken.Literal);
+
+	return exp;
+};
+
+func (p *Parser)  parseAssignmentStatement() statement.AssignmentStatement {
+	let stmt = new statement.AssignmentStatement(new literal.Identifier(this.curToken, this.curToken.Literal));
+
+	if (!this.expectPeek(token.ASSIGN)) {
+		return null;
+	}
+	this.nextToken();
+	stmt.Value = this.parseExpression(LOWEST);
+	if (this.peekTokenIs(token.SEMICOLON)) {
+		this.nextToken();
+	}
+	return stmt;
+};
+
 func (p *Parser) parseLetStatement() *ast.LetStatement {
 	stmt := &ast.LetStatement{Token: p.curToken}
 	if !p.expectPeek(token.IDENT) {
@@ -307,6 +442,23 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 	}
 	return stmt
 }
+
+// func (p *Parser) parseClassStatement = (): ast.ClassStatement => {
+// 	let stmt = new ast.ClassStatement(this.curToken);
+
+// 	if (!this.expectPeek(token.IDENT)) {
+// 		return null;
+// 	}
+
+// 	stmt.Name = new literal.Identifier(this.curToken, this.curToken.Literal);
+// 	this.nextToken();
+// 	stmt.Value = <ast.HashLiteral>this.parseHashLiteral(true);
+
+// 	if (this.peekTokenIs(token.SEMICOLON)) {
+// 		this.nextToken();
+// 	}
+// 	return stmt;
+// }
 
 func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	block := &ast.BlockStatement{Token: p.curToken}

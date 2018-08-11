@@ -99,6 +99,59 @@ func (ie *IfExpression) String() string {
 	return out.String()
 }
 
+type ForExpression struct {
+	Token       token.Token // The 'for' token
+	Element     Identifier
+	Range       Expression
+	Consequence *BlockStatement
+}
+
+func (fe *ForExpression) expressionNode()      {}
+func (fe *ForExpression) TokenLiteral() string { return fe.Token.Literal }
+func (fe *ForExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("for")
+	out.WriteString(fe.Element.String())
+	out.WriteString(fe.Range.String())
+	out.WriteString(" ")
+	out.WriteString(fe.Consequence.String())
+	return out.String()
+}
+
+type WhileExpression struct {
+	Token       token.Token // The 'while' token
+	Condition   Expression
+	Consequence *BlockStatement
+}
+
+func (we *WhileExpression) expressionNode()      {}
+func (we *WhileExpression) TokenLiteral() string { return we.Token.Literal }
+func (we *WhileExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("while")
+	out.WriteString(we.Condition.String())
+	out.WriteString(" ")
+	out.WriteString(we.Consequence.String())
+	return out.String()
+}
+
+type SleepExpression struct {
+	Token       token.Token // The 'sleep' token
+	Duration    Expression
+	Consequence *BlockStatement
+}
+
+func (se *SleepExpression) expressionNode()      {}
+func (se *SleepExpression) TokenLiteral() string { return se.Token.Literal }
+func (se *SleepExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("sleep")
+	out.WriteString(se.Duration.String())
+	out.WriteString(" ")
+	out.WriteString(se.Consequence.String())
+	return out.String()
+}
+
 type CallExpression struct {
 	Token     token.Token // The '(' token
 	Function  Expression  // Identifier or FunctionLiteral
@@ -119,6 +172,42 @@ func (ce *CallExpression) String() string {
 	out.WriteString(")")
 	return out.String()
 }
+
+// export class NewExpression implements Expression {
+// 	constructor(
+// 		public Token:  token.Token, // the token.NEW token
+// 		public Name?:  Identifier,
+// 		public NodeName: string = "NewExpression"
+// 	) {
+// 	}
+// 	public expressionNode()      {}
+// 	public TokenLiteral(): string {
+// 		return this.Token.Literal
+// 	}
+// 	public String(): string {
+// 		var out = this.TokenLiteral() + " " + out + this.Name.String()
+
+// 		return out;
+// 	}
+// }
+
+// export class ExecExpression implements Expression {
+// 	constructor(
+// 		public Token:  token.Token, // the token.NEW token
+// 		public Name?:  Expression,
+// 		public NodeName: string = "ExecExpression"
+// 	) {
+// 	}
+// 	public expressionNode()      {}
+// 	public TokenLiteral(): string {
+// 		return this.Token.Literal
+// 	}
+// 	public String(): string {
+// 		var out = this.TokenLiteral() + " " + out + this.Name.String()
+
+// 		return out;
+// 	}
+// }
 
 type LetStatement struct {
 	Token token.Token // the token.LET token
@@ -206,6 +295,30 @@ func (ie *IndexExpression) String() string {
 	return out.String()
 }
 
+/*
+export class IndexAssignmentExpression implements Expression {
+	constructor(
+		public Token: token.Token, // The [ token
+		public Left:  Expression,
+		public Index?: Expression,
+		public Assignment?: Expression,
+		public NodeName: string = "IndexAssignmentExpression"
+	) {
+
+	}
+	public expressionNode()      {}
+	public TokenLiteral(): string { return this.Token.Literal }
+	public String(): string {
+		var out:string = "";
+		out += this.Left.String();
+		out += ".";
+		out += this.Index.String();
+		out += "=";
+		out += this.Assignment.String();
+		return out;
+	}
+} */
+
 type Identifier struct {
 	Token token.Token // the token.IDENT token
 	Value string
@@ -217,11 +330,6 @@ func (i *Identifier) TokenLiteral() string {
 	return i.Token.Literal
 }
 
-type IntegerLiteral struct {
-	Token token.Token
-	Value int64
-}
-
 type StringLiteral struct {
 	Token token.Token
 	Value string
@@ -231,9 +339,23 @@ func (sl *StringLiteral) expressionNode()      {}
 func (sl *StringLiteral) TokenLiteral() string { return sl.Token.Literal }
 func (sl *StringLiteral) String() string       { return sl.Token.Literal }
 
+type IntegerLiteral struct {
+	Token token.Token
+	Value int64
+}
+
 func (il *IntegerLiteral) expressionNode()      {}
 func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
 func (il *IntegerLiteral) String() string       { return il.Token.Literal }
+
+type FloatLiteral struct {
+	Token token.Token
+	Value float64
+}
+
+func (fl *FloatLiteral) expressionNode()      {}
+func (fl *FloatLiteral) TokenLiteral() string { return fl.Token.Literal }
+func (fl *FloatLiteral) String() string       { return fl.Token.Literal }
 
 type FunctionLiteral struct {
 	Token      token.Token // The 'fn' token
