@@ -64,9 +64,10 @@ func (rv *ReturnValue) Type() ObjectType { return RETURN_VALUE_OBJ }
 func (rv *ReturnValue) Inspect() string  { return rv.Value.Inspect() }
 
 type Function struct {
-	Parameters []*ast.Identifier
-	Body       *ast.BlockStatement
-	Env        *Environment
+	Parameters    []*ast.Identifier
+	Body          *ast.BlockStatement
+	Env           *Environment
+	ObjectContext Hash
 }
 
 func (f *Function) Type() ObjectType { return FUNCTION_OBJ }
@@ -128,11 +129,14 @@ type Hashable interface {
 }
 
 type HashPair struct {
-	Key   Object
-	Value Object
+	Key       Object
+	Value     Object
+	Modifiers []int64
 }
 type Hash struct {
-	Pairs map[HashKey]HashPair
+	Pairs       map[HashKey]HashPair
+	Constructor *Function
+	className   string
 }
 
 func (h *Hash) Type() ObjectType { return HASH_OBJ }
