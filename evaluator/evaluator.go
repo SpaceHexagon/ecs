@@ -300,6 +300,7 @@ func evalNewExpression(ne *ast.NewExpression, env *object.Environment, objectCon
 		return newError("new operator can only be used with Class or Hashmap. Invalid type: %s", classData.Type())
 	}
 	instance := util.CopyHashMap(classData)
+
 	className := object.String{Value: ne.Name.Value}
 	classNameKey := className.HashKey()
 	if instance.(*object.Hash).Pairs[classNameKey].Value.Type() != object.NULL_OBJ {

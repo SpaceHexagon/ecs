@@ -4,29 +4,43 @@ import (
 	"github.com/SpaceHexagon/ecs/object"
 )
 
+// CopyObject returns a copy of any primitive object
 func CopyObject(valueNode object.Object) object.Object {
 	switch valueNode.Type() {
-	case "boolean":
+	case "BOOLEAN":
 		return &object.Boolean{Value: valueNode.(*object.Boolean).Value}
-	case "integer":
+	case "INTEGER":
 		return &object.Integer{Value: valueNode.(*object.Integer).Value}
-	case "float":
+	case "FLOAT":
 		return &object.Float{Value: valueNode.(*object.Float).Value}
-	case "string":
+	case "STRING":
 		return &object.String{Value: valueNode.(*object.String).Value}
-	case "array":
-		return &object.Array{Elements: valueNode.(*object.Array).Elements}
-	case "hash":
+	case "ARRAY":
+		return CopyArray(valueNode.(*object.Array))
+	case "HASH":
 		return CopyHashMap(valueNode)
-	case "function":
-	case "BUILTIN":
-		return valueNode
+	case object.FUNCTION_OBJ:
+	case object.BUILTIN_OBJ:
 	default:
 		return &object.Null{}
 	}
 	return &object.Null{}
 }
 
+// CopyArray returns a deep copy of an existing object.Array
+func CopyArray(array *object.Array) object.Object {
+	var (
+		elements []object.Object
+	)
+	for _, elem := range array.Elements {
+		newObj := CopyObject(elem)
+		elements = append(elements, newObj)
+	}
+	return &object.Array{Elements: elements}
+}
+
+// CopyHashMap creates a new object.Hash with the values of an existing one
+// static fields and constructors are copied by reference
 func CopyHashMap(data object.Object) object.Object {
 	pairData := data.(*object.Hash).Pairs
 
@@ -35,17 +49,14 @@ func CopyHashMap(data object.Object) object.Object {
 	for key, pair := range pairData {
 		valueNode := pair.Value
 		keyNode := pair.Key
-		isStatic := pair.Modifiers != nil && hasModifier(pair.Modifiers, 1)
-
+		isStatic := valueNode.Type() == "FUNCTION" || pair.Modifiers != nil && hasModifier(pair.Modifiers, 1)
 		var (
-			NewValue object.Object
-			newPair  object.HashPair
+			newPair object.HashPair
 		)
-
 		if isStatic {
 			pairs[key] = pair
 		} else {
-			NewValue = CopyObject(valueNode)
+			NewValue := CopyObject(valueNode)
 			newPair = object.HashPair{Key: keyNode, Value: NewValue}
 			if pair.Modifiers != nil {
 				newPair.Modifiers = pair.Modifiers
