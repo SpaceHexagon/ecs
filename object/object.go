@@ -136,7 +136,7 @@ type HashPair struct {
 type Hash struct {
 	Pairs       map[HashKey]HashPair
 	Constructor *Function
-	className   string
+	ClassName   string
 }
 
 func (h *Hash) Type() ObjectType { return HASH_OBJ }

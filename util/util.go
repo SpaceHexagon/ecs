@@ -43,14 +43,14 @@ func copyHashMap(data object.Object) object.Object {
 		)
 
 		if isStatic {
-			// pairs.Set(KeyNode.HashKey(), valueNode)
+			pairs[key] = pair
 		} else {
 			NewValue = copyObject(valueNode)
-			//newPair = {Key: keyNode, Value: NewValue} as object.HashPair;
+			newPair = object.HashPair{Key: keyNode, Value: NewValue}
 			if pair.Modifiers != nil {
 				newPair.Modifiers = pair.Modifiers
 			}
-			// pairs[(keyNode as any).Value] = newPair;
+			pairs[key] = newPair
 		}
 	}
 
@@ -82,14 +82,15 @@ type StringObjectPair struct {
 
 func makeBuiltinInterface(methods []StringObjectPair) object.Hash {
 	pairs := make(map[object.HashKey]object.HashPair)
-	for k, v := range methods {
-		v.Set(&object.HashKey, &object.HashPair{
-			Key:   v.obj,
-			Value: v,
-		})
+	for _, v := range methods {
+		key := &object.String{Value: v.name}
+		pairs[key.HashKey()] = object.HashPair{
+			Key:   key,
+			Value: v.obj,
+		}
 	}
 
-	return &object.Hash{Pairs: pairs}
+	return object.Hash{Pairs: pairs}
 }
 
 // func addMethod (allMethods, methodName string, contextName string, builtinFn object.Builtin) {
@@ -99,69 +100,70 @@ func makeBuiltinInterface(methods []StringObjectPair) object.Hash {
 // 	}});
 // }
 
-func nativeListToArray(obj slice) object.Array {
-	return &object.Array{Elements: nil} //obj
-	// 	.map(element => {
-	// 		switch(typeof element) {
-	// 			case "string":
-	// 				return new object.String(element)
-	// 			case "number":
-	// 				return new object.Float(element)
-	// 			case "boolean":
-	// 				return new object.Boolean(element);
-	// 			case "object":
-	// 				if (typeof element.length == "number") {
-	// 					return nativeListToArray(element);
-	// 				} else {
-	// 					return nativeObjToMap(element);
-	// 				}
-	// 			default:
-	// 			return new object.NULL();
-	// 		}
-	// 	}
-	// ));
+func nativeListToArray(items []interface{}) object.Array {
+	var (
+		elements []object.Object
+	)
+	for _, element := range items {
+		switch element.(type) {
+		case string:
+			elements = append(elements, &object.String{Value: element.(string)})
+		case int64:
+			elements = append(elements, &object.Integer{Value: element.(int64)})
+		case float64:
+			elements = append(elements, &object.Float{Value: element.(float64)})
+		case bool:
+			elements = append(elements, &object.Boolean{Value: element.(bool)})
+		// case []interface{}:
+		// 	elements = append(elements, (nativeListToArray(element))
+		// case interface{}:
+		// 	elements = append(elements, nativeObjToMap(element.(map[string]interface{})).(interface{}(object.Object).(type)))
+		default:
+			elements = append(elements, &object.Null{})
+		}
+	}
+
+	return object.Array{Elements: elements} //obj
 }
 
 // func nativeObjToMap (obj: {[key: string]: any} = {}): object.Hash => {
-// func nativeObjToMap(obj map[string]interface) object.Hash {
-// 	map := &object.Hash({ });
+func nativeObjToMap(obj map[string]interface{}) object.Hash {
+	newMap := object.Hash{Pairs: nil}
 
-// 		for objectKey, data = range obj {
-// 			var (
-// 				value object.Object
-// 			)
+	for objectKey, data := range obj {
+		var (
+			value object.Object
+		)
 
-// 			switch(typeof data) {
-// 				case "string":
-// 					value = &object.String{Value: data}
-// 				break;
-// 				case "":
-// 					value = &object.Integer{Value: data}
-// 				break;
-// 				case "boolean":
-// 					value = &object.Boolean{Value: data}
-// 				break;
-// 				case "object":
-// 					if (typeof data.length == "number") {
-// 						value = nativeListToArray(data);
-// 					} else {
-// 						value = nativeObjToMap(data);
-// 					}
-// 				break;
-// 				case "function":
-// 				console.log("native function", data);
-// 					// need to figure this out
-// 					// new object.Builtin(builtinFn, contextName)
-// 				break;
-// 				default:
+		switch data.(type) {
+		case string:
+			value = &object.String{Value: data.(string)}
+			break
+		case int64:
+			value = &object.Integer{Value: data.(int64)}
+			break
+		case float64:
+			value = &object.Float{Value: data.(float64)}
+		case bool:
+			value = &object.Boolean{Value: data.(bool)}
+			break
+		// case interface{}:
+		// 	value = nativeObjToMap(data)
+		// 	break
+		// case :
+		// 	console.log("native function", data)
+		// 	// need to figure this out
+		// 	// new object.Builtin(builtinFn, contextName)
+		// 	break
+		default:
 
-// 			}
+		}
+		key := &object.String{Value: objectKey}
+		newMap.Pairs[key.HashKey()] = object.HashPair{
+			Key:   key,
+			Value: value,
+		}
+	}
 
-// 			map[objectKey] = {
-// 				Key: new object.String(objectKey),
-// 				Value: value
-// 			} as object.HashPair;
-// 		}
-
-// 		return map;
-// 	}
+	return newMap
+}
