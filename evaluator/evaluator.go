@@ -202,10 +202,21 @@ func evalPrefixExpression(operator string, right object.Object) object.Object {
 		return evalBangOperatorExpression(right)
 	case "-":
 		return evalMinusPrefixOperatorExpression(right)
+	case "typeof":
+		return evalTypeofExpression(right)
 	default:
 		return newError("unknown operator: %s%s", operator, right.Type())
 	}
 }
+
+func evalTypeofExpression(right object.Object) object.Object {
+	if right.Type() == object.HASH_OBJ && right.(*object.Hash).ClassName != "" {
+		return &object.String{Value: right.(*object.Hash).ClassName}
+	} else {
+		return &object.String{Value: string(right.Type())}
+	}
+}
+
 func evalInfixExpression(
 	operator string,
 	left, right object.Object,
