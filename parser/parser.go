@@ -107,6 +107,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
 	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
 	p.registerPrefix(token.LBRACE, p.parseHashLiteral)
+	p.registerPrefix(token.NEW, p.parseNewExpression)
+	p.registerPrefix(token.EXEC, p.parseExecExpression)
 	// init parser - both curToken and peekToken should be set
 	p.nextToken()
 	p.nextToken()
@@ -376,6 +378,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseLetStatement()
 	case token.RETURN:
 		return p.parseReturnStatement()
+	case token.CLASS:
+		return p.parseClassStatement()
 	default:
 		return p.parseExpressionStatement()
 	}

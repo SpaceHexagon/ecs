@@ -4,6 +4,8 @@ package evaluator
 import (
 	"fmt"
 	"hash/fnv"
+	"strconv"
+	"time"
 
 	"github.com/SpaceHexagon/ecs/util"
 
@@ -287,16 +289,27 @@ func evalNewExpression(ne *ast.NewExpression, env *object.Environment, objectCon
 		return newError("new operator can only be used with Class or Hashmap. Invalid type: %s", classData.Type())
 	}
 	instance := util.CopyHashMap(classData)
-	// if instance.Constructor == nil && instance.Pairs[ne.Name.Value] != nil {
-	// 	instance.(*object.Hash).Constructor = instance.Pairs[ne.Name.Value].Value
-	// 	instance.className = ne.Name.Value
-	// 	bindContextToMethods(instance)
-	// 	// if (instance.Pairs.builtin && instance.Pairs.builtin.Value) {
-	// 	// 	extendBuiltinMethodEnvs(instance);
-	// 	// }
-	// }
+	className := object.String{Value: ne.Name.Value}
+	classNameKey := className.HashKey()
+	if instance.(*object.Hash).Pairs[classNameKey].Value.Type() != object.NULL_OBJ {
+		instance.(*object.Hash).Constructor = instance.(*object.Hash).Pairs[classNameKey].Value.(*object.Function)
+	}
+	instance.(*object.Hash).ClassName = ne.Name.Value
+	bindContextToMethods(instance.(*object.Hash))
 
 	return instance
+}
+
+func bindContextToMethods(instance *object.Hash) {
+	pairs := instance.Pairs
+
+	for _, p := range pairs {
+		pairType := p.Value.Type()
+
+		if pairType == object.BUILTIN_OBJ || pairType == object.FUNCTION_OBJ {
+			p.Value.(*object.Function).ObjectContext = *instance
+		}
+	}
 }
 
 func evalIfExpression(ie *ast.IfExpression, env *object.Environment, objectContext *object.Hash) object.Object {
@@ -402,10 +415,9 @@ func evalSleepExpression(se *ast.SleepExpression, env *object.Environment, objec
 	if isError(duration) {
 		return duration
 	}
-	// setTimeout(()=>{
-	// 	Eval(se.Consequence, env, objectContext)
-	// }, <number>duration.Inspect())
-
+	sleepDuration, _ := strconv.Atoi(duration.Inspect())
+	time.Sleep(time.Duration(sleepDuration*1000000) * time.Nanosecond)
+	Eval(se.Consequence, env, objectContext)
 	return NULL
 }
 
@@ -445,6 +457,13 @@ func evalIdentifier(
 	env *object.Environment,
 	objectContext *object.Hash,
 ) object.Object {
+	name := node.Value
+	if name == "this" {
+		if objectContext != nil {
+			return objectContext
+		}
+		return newError("statement has no object context")
+	}
 	if val, ok := env.Get(node.Value); ok {
 		return val
 	}

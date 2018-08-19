@@ -8,7 +8,7 @@ func CopyObject(valueNode object.Object) object.Object {
 	switch valueNode.Type() {
 	case "boolean":
 		return &object.Boolean{Value: valueNode.(*object.Boolean).Value}
-	case "int":
+	case "integer":
 		return &object.Integer{Value: valueNode.(*object.Integer).Value}
 	case "float":
 		return &object.Float{Value: valueNode.(*object.Float).Value}
