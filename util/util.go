@@ -4,7 +4,7 @@ import (
 	"github.com/SpaceHexagon/ecs/object"
 )
 
-func copyObject(valueNode object.Object) object.Object {
+func CopyObject(valueNode object.Object) object.Object {
 	switch valueNode.Type() {
 	case "boolean":
 		return &object.Boolean{Value: valueNode.(*object.Boolean).Value}
@@ -17,7 +17,7 @@ func copyObject(valueNode object.Object) object.Object {
 	case "array":
 		return &object.Array{Elements: valueNode.(*object.Array).Elements}
 	case "hash":
-		return copyHashMap(valueNode)
+		return CopyHashMap(valueNode)
 	case "function":
 	case "BUILTIN":
 		return valueNode
@@ -27,7 +27,7 @@ func copyObject(valueNode object.Object) object.Object {
 	return &object.Null{}
 }
 
-func copyHashMap(data object.Object) object.Object {
+func CopyHashMap(data object.Object) object.Object {
 	pairData := data.(*object.Hash).Pairs
 
 	pairs := make(map[object.HashKey]object.HashPair)
@@ -45,7 +45,7 @@ func copyHashMap(data object.Object) object.Object {
 		if isStatic {
 			pairs[key] = pair
 		} else {
-			NewValue = copyObject(valueNode)
+			NewValue = CopyObject(valueNode)
 			newPair = object.HashPair{Key: keyNode, Value: NewValue}
 			if pair.Modifiers != nil {
 				newPair.Modifiers = pair.Modifiers
@@ -66,8 +66,8 @@ func hasModifier(modifiers []int64, modifier int64) bool {
 	return false
 }
 
-func makeBuiltinClass(className string, fields []StringObjectPair) object.Hash {
-	instance := makeBuiltinInterface(fields)
+func MakeBuiltinClass(className string, fields []StringObjectPair) object.Hash {
+	instance := MakeBuiltinInterface(fields)
 
 	// instance.Constructor = instance.Pairs.Get(&object.String(className).HashKey())
 	// instance.className = className
@@ -80,7 +80,7 @@ type StringObjectPair struct {
 	obj  object.Object
 }
 
-func makeBuiltinInterface(methods []StringObjectPair) object.Hash {
+func MakeBuiltinInterface(methods []StringObjectPair) object.Hash {
 	pairs := make(map[object.HashKey]object.HashPair)
 	for _, v := range methods {
 		key := &object.String{Value: v.name}
@@ -100,7 +100,7 @@ func makeBuiltinInterface(methods []StringObjectPair) object.Hash {
 // 	}});
 // }
 
-func nativeListToArray(items []interface{}) object.Array {
+func NativeListToArray(items []interface{}) object.Array {
 	var (
 		elements []object.Object
 	)
@@ -127,7 +127,7 @@ func nativeListToArray(items []interface{}) object.Array {
 }
 
 // func nativeObjToMap (obj: {[key: string]: any} = {}): object.Hash => {
-func nativeObjToMap(obj map[string]interface{}) object.Hash {
+func NativeObjToMap(obj map[string]interface{}) object.Hash {
 	newMap := object.Hash{Pairs: nil}
 
 	for objectKey, data := range obj {

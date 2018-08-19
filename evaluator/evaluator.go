@@ -27,7 +27,7 @@ func Eval(node ast.Node, env *object.Environment, objectContext *object.Hash) ob
 	case *ast.Program:
 		return evalProgram(node, env)
 	case *ast.BlockStatement:
-		return evalBlockStatement(node, env)
+		return evalBlockStatement(node, env, objectContext)
 	case *ast.ReturnStatement:
 		val := Eval(node.ReturnValue, env, objectContext)
 		if isError(val) {
@@ -46,7 +46,7 @@ func Eval(node ast.Node, env *object.Environment, objectContext *object.Hash) ob
 		constructor := pair.Value
 
 		if constructor != nil {
-			val.(*object.Hash).Constructor = constructor.(*object.Funcion)
+			val.(*object.Hash).Constructor = constructor.(*object.Function)
 		}
 		env.Set(node.Name.Value, val)
 		break
@@ -88,7 +88,7 @@ func Eval(node ast.Node, env *object.Environment, objectContext *object.Hash) ob
 		if isError(function) {
 			return function
 		}
-		args := evalExpressions(node.Arguments, env)
+		args := evalExpressions(node.Arguments, env, objectContext)
 		if len(args) == 1 && isError(args[0]) {
 			return args[0]
 		}
@@ -116,7 +116,7 @@ func Eval(node ast.Node, env *object.Environment, objectContext *object.Hash) ob
 	case *ast.StringLiteral:
 		return &object.String{Value: node.Value}
 	case *ast.ArrayLiteral:
-		elements := evalExpressions(node.Elements, env)
+		elements := evalExpressions(node.Elements, env, objectContext)
 		if len(elements) == 1 && isError(elements[0]) {
 			return elements[0]
 		}
@@ -133,8 +133,8 @@ func Eval(node ast.Node, env *object.Environment, objectContext *object.Hash) ob
 		return evalSleepExpression(node, env, objectContext)
 	case *ast.NewExpression:
 		return evalNewExpression(node, env, objectContext)
-	case *ast.ExecExpression:
-		return evalExecExpression(node, env, objectContext)
+	// case *ast.ExecExpression:
+	// 	return evalExecExpression(node, env, objectContext)
 	case *ast.Identifier:
 		return evalIdentifier(node, env, objectContext)
 
@@ -155,20 +155,20 @@ func evalProgram(program *ast.Program, env *object.Environment) object.Object {
 	}
 	return result
 }
-func evalStatements(stmts []ast.Statement, env *object.Environment) object.Object {
+func evalStatements(stmts []ast.Statement, env *object.Environment, objectContext *object.Hash) object.Object {
 	var result object.Object
 	for _, statement := range stmts {
-		result = Eval(statement, env)
+		result = Eval(statement, env, objectContext)
 		if returnValue, ok := result.(*object.ReturnValue); ok {
 			return returnValue.Value
 		}
 	}
 	return result
 }
-func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) object.Object {
+func evalBlockStatement(block *ast.BlockStatement, env *object.Environment, objectContext *object.Hash) object.Object {
 	var result object.Object
 	for _, statement := range block.Statements {
-		result = Eval(statement, env)
+		result = Eval(statement, env, objectContext)
 		if result != nil {
 			rt := result.Type()
 			if rt == object.RETURN_VALUE_OBJ || rt == object.ERROR_OBJ {
@@ -181,10 +181,11 @@ func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) obje
 func evalExpressions(
 	exps []ast.Expression,
 	env *object.Environment,
+	objectContext *object.Hash,
 ) []object.Object {
 	var result []object.Object
 	for _, e := range exps {
-		evaluated := Eval(e, env)
+		evaluated := Eval(e, env, objectContext)
 		if isError(evaluated) {
 			return []object.Object{evaluated}
 		}
@@ -284,7 +285,7 @@ func evalNewExpression(ne *ast.NewExpression, env *object.Environment, objectCon
 	if classData.Type() != object.HASH_OBJ {
 		return newError("new operator can only be used with Class or Hashmap. Invalid type: %s", classData.Type())
 	}
-	instance := util.copyHashMap(classData)
+	instance := util.CopyHashMap(classData)
 	// if instance.Constructor == nil && instance.Pairs[ne.Name.Value] != nil {
 	// 	instance.(*object.Hash).Constructor = instance.Pairs[ne.Name.Value].Value
 	// 	instance.className = ne.Name.Value
@@ -318,7 +319,6 @@ func evalForExpression(fl *ast.ForExpression, env *object.Environment, objectCon
 	)
 	rangeObj := Eval(fl.Range, env, objectContext)
 	element := fl.Element.Value
-	key := ""
 	indexObj := &object.Integer{Value: index}
 
 	if isError(rangeObj) {
@@ -364,7 +364,7 @@ func evalForExpression(fl *ast.ForExpression, env *object.Environment, objectCon
 			index++
 		}
 	} else if rangeType == object.HASH_OBJ {
-		for k, v := range rangeObj.(*object.Hash).Pairs {
+		for _, v := range rangeObj.(*object.Hash).Pairs {
 			env.Set(element, &object.String{Value: v.Value.Inspect()})
 			result = Eval(fl.Consequence, env, objectContext)
 			if isError(result) {
