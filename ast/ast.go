@@ -248,8 +248,8 @@ func (ls *LetStatement) String() string {
 
 type ClassStatement struct {
 	Token token.Token // the token.CLASS token
-	Name  Identifier
-	Value HashLiteral
+	Name  *Identifier
+	Value *HashLiteral
 }
 
 func (cs *ClassStatement) statementNode() {}

@@ -36,10 +36,11 @@ func Eval(node ast.Node, env *object.Environment, objectContext *object.Hash) ob
 		return &object.ReturnValue{Value: val}
 
 	case *ast.ClassStatement:
-		val := Eval(&node.Value, env, objectContext)
+		val := Eval(node.Value, env, objectContext)
 		if isError(val) {
 			return val
 		}
+
 		h := fnv.New64a()
 		h.Write([]byte(node.Name.Value))
 		pair := val.(*object.Hash).Pairs[object.HashKey{Type: object.STRING_OBJ, Value: h.Sum64()}]

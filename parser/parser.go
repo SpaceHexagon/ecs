@@ -93,6 +93,7 @@ func New(l *lexer.Lexer) *Parser {
 
 	p.registerPrefix(token.IDENT, p.parseIdentifier)
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
+	p.registerPrefix(token.FLOAT, p.parseFloatLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
@@ -450,22 +451,24 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 	return stmt
 }
 
-// func (p *Parser) parseClassStatement = (): ast.ClassStatement => {
-// 	let stmt = new ast.ClassStatement(p.curToken);
+func (p *Parser) parseClassStatement() *ast.ClassStatement {
+	stmt := &ast.ClassStatement{Token: p.curToken}
 
-// 	if (!p.expectPeek(token.IDENT)) {
-// 		return null;
-// 	}
+	if !p.expectPeek(token.IDENT) {
+		return nil
+	}
 
-// 	stmt.Name = new literal.Identifier(p.curToken, p.curToken.Literal);
-// 	p.nextToken();
-// 	stmt.Value = <ast.HashLiteral>p.parseHashLiteral(true);
+	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	p.nextToken()
 
-// 	if (p.peekTokenIs(token.SEMICOLON)) {
-// 		p.nextToken();
-// 	}
-// 	return stmt;
-// }
+	classMap := p.parseHashLiteral()
+	stmt.Value = classMap.(*ast.HashLiteral)
+
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+	return stmt
+}
 
 func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	block := &ast.BlockStatement{Token: p.curToken}
@@ -490,6 +493,19 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
 	if err != nil {
 		msg := fmt.Sprintf("could not parse %q as integer", p.curToken.Literal)
+		p.errors = append(p.errors, msg)
+		return nil
+	}
+	lit.Value = value
+	return lit
+}
+
+func (p *Parser) parseFloatLiteral() ast.Expression {
+	curToken := p.curToken
+	lit := &ast.FloatLiteral{Token: curToken}
+	value, err := strconv.ParseFloat(p.curToken.Literal, 64)
+	if err != nil {
+		msg := fmt.Sprintf("could not parse %q as float", p.curToken.Literal)
 		p.errors = append(p.errors, msg)
 		return nil
 	}
