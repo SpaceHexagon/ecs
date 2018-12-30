@@ -134,7 +134,7 @@ func (p *Parser) parseHashLiteral() ast.Expression {
 	hash.Pairs = make(map[ast.Expression]ast.Expression)
 	for !p.peekTokenIs(token.RBRACE) {
 		p.nextToken()
-		key := p.parseExpression(LOWEST)
+		key := p.parseExpressionWithModifiers(LOWEST)
 		if !p.expectPeek(token.COLON) {
 			return nil
 		}
@@ -164,6 +164,51 @@ func (p *Parser) ParseProgram() *ast.Program {
 	}
 
 	return program
+}
+
+func (p *Parser) parseExpressionWithModifiers(precedence int) ast.Expression {
+	var (
+		prefix  prefixParseFn
+		leftExp ast.Expression
+		// modifiers []int
+		// modifier  = -1
+	)
+
+	// modifier = modifierTypes.indexOf(p.curToken.Type)
+	// for modifier > -1 {
+	// 	modifiers = append(modifiers, modifier)
+	// 	p.nextToken()
+	// 	modifier = modifierTypes.indexOf(p.curToken.Type)
+
+	// }
+	curTokenType := p.curToken.Type
+
+	prefix = p.prefixParseFns[curTokenType]
+	if prefix == nil {
+		p.noPrefixParseFnError(curTokenType)
+		return nil
+	}
+
+	if curTokenType == "IDENT" {
+		prefix = p.parseStringLiteral
+		leftExp = prefix()
+		// if len(modifiers) > 0 {
+		// 	leftExp.modifiers = modifiers
+		// }
+	} else {
+		leftExp = prefix()
+	}
+
+	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
+		infix := p.infixParseFns[p.peekToken.Type]
+
+		if infix == nil {
+			return leftExp
+		}
+		p.nextToken()
+		leftExp = infix(leftExp)
+	}
+	return leftExp
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {
