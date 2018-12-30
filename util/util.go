@@ -83,25 +83,25 @@ func MakeBuiltinClass(className string, fields []StringObjectPair) object.Hash {
 	// instance.Constructor = instance.Pairs.Get(&object.String(className).HashKey())
 	// instance.className = className
 	// instance.Pairs.builtin = &object.HashPair{Key: strBuiltin.HashKey(), Value: TRUE}
-	return instance
+	return *instance
 }
 
 type StringObjectPair struct {
-	name string
-	obj  object.Object
+	Name string
+	Obj  object.Object
 }
 
-func MakeBuiltinInterface(methods []StringObjectPair) object.Hash {
+func MakeBuiltinInterface(methods []StringObjectPair) *object.Hash {
 	pairs := make(map[object.HashKey]object.HashPair)
 	for _, v := range methods {
-		key := &object.String{Value: v.name}
+		key := &object.String{Value: v.Name}
 		pairs[key.HashKey()] = object.HashPair{
 			Key:   key,
-			Value: v.obj,
+			Value: v.Obj,
 		}
 	}
 
-	return object.Hash{Pairs: pairs}
+	return &object.Hash{Pairs: pairs}
 }
 
 // func addMethod (allMethods, methodName string, contextName string, builtinFn object.Builtin) {

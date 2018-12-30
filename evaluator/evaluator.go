@@ -1,4 +1,3 @@
-// evaluator/evaluator.go
 package evaluator
 
 import (
@@ -10,6 +9,7 @@ import (
 	"github.com/SpaceHexagon/ecs/util"
 
 	"github.com/SpaceHexagon/ecs/ast"
+	"github.com/SpaceHexagon/ecs/builtins"
 	"github.com/SpaceHexagon/ecs/object"
 )
 
@@ -19,7 +19,7 @@ var (
 	FALSE = &object.Boolean{Value: false}
 )
 
-func newError(format string, a ...interface{}) *object.Error {
+func NewError(format string, a ...interface{}) *object.Error {
 	return &object.Error{Message: fmt.Sprintf(format, a...)}
 }
 
@@ -205,7 +205,7 @@ func evalPrefixExpression(operator string, right object.Object) object.Object {
 	case "typeof":
 		return evalTypeofExpression(right)
 	default:
-		return newError("unknown operator: %s%s", operator, right.Type())
+		return NewError("unknown operator: %s%s", operator, right.Type())
 	}
 }
 
@@ -229,12 +229,12 @@ func evalInfixExpression(
 	case operator == "!=":
 		return nativeBoolToBooleanObject(left != right)
 	case left.Type() != right.Type():
-		return newError("type mismatch: %s %s %s",
+		return NewError("type mismatch: %s %s %s",
 			left.Type(), operator, right.Type())
 	case left.Type() == object.STRING_OBJ && right.Type() == object.STRING_OBJ:
 		return evalStringInfixExpression(operator, left, right)
 	default:
-		return newError("unknown operator: %s %s %s",
+		return NewError("unknown operator: %s %s %s",
 			left.Type(), operator, right.Type())
 
 	}
@@ -266,7 +266,7 @@ func evalIntegerInfixExpression(
 		return nativeBoolToBooleanObject(leftVal != rightVal)
 
 	default:
-		return newError("unknown operator: %s %s %s",
+		return NewError("unknown operator: %s %s %s",
 			left.Type(), operator, right.Type())
 	}
 }
@@ -288,7 +288,7 @@ func evalStringInfixExpression(
 	case ">":
 		return nativeBoolToBooleanObject(leftVal > rightVal)
 	default:
-		return newError("unknown operator: %s %s %s",
+		return NewError("unknown operator: %s %s %s",
 			left.Type(), operator, right.Type())
 	}
 }
@@ -297,7 +297,7 @@ func evalNewExpression(ne *ast.NewExpression, env *object.Environment, objectCon
 	classData := evalIdentifier(ne.Name, env, objectContext)
 
 	if classData.Type() != object.HASH_OBJ {
-		return newError("new operator can only be used with Class or Hashmap. Invalid type: %s", classData.Type())
+		return NewError("new operator can only be used with Class or Hashmap. Invalid type: %s", classData.Type())
 	}
 	instance := util.CopyHashMap(classData)
 
@@ -399,10 +399,10 @@ func evalForExpression(fl *ast.ForExpression, env *object.Environment, objectCon
 			index++
 		}
 		if err != nil {
-			return newError("error in for loop %s", err)
+			return NewError("error in for loop %s", err)
 		}
 	} else {
-		return newError("unknown range type in for loop: %s", rangeObj.Type())
+		return NewError("unknown range type in for loop: %s", rangeObj.Type())
 	}
 
 	return NULL
@@ -440,7 +440,7 @@ func evalIndexExpression(left, index object.Object) object.Object {
 	case left.Type() == object.HASH_OBJ:
 		return evalHashIndexExpression(left, index)
 	default:
-		return newError("index operator not supported: %s", left.Type())
+		return NewError("index operator not supported: %s", left.Type())
 	}
 }
 func evalArrayIndexExpression(array, index object.Object) object.Object {
@@ -456,7 +456,7 @@ func evalHashIndexExpression(hash, index object.Object) object.Object {
 	hashObject := hash.(*object.Hash)
 	key, ok := index.(object.Hashable)
 	if !ok {
-		return newError("unusable as hash key: %s", index.Type())
+		return NewError("unusable as hash key: %s", index.Type())
 	}
 	pair, ok := hashObject.Pairs[key.HashKey()]
 	if !ok {
@@ -474,15 +474,15 @@ func evalIdentifier(
 		if objectContext != nil {
 			return objectContext
 		}
-		return newError("statement has no object context")
+		return NewError("statement has no object context")
 	}
 	if val, ok := env.Get(node.Value); ok {
 		return val
 	}
-	if builtin, ok := builtins[node.Value]; ok {
+	if builtin, ok := builtins.ECSBuiltins[node.Value]; ok {
 		return builtin
 	}
-	return newError("identifier not found: " + node.Value)
+	return NewError("identifier not found: " + node.Value)
 }
 func evalHashLiteral(
 	node *ast.HashLiteral,
@@ -497,7 +497,7 @@ func evalHashLiteral(
 		}
 		hashKey, ok := key.(object.Hashable)
 		if !ok {
-			return newError("unusable as hash key: %s", key.Type())
+			return NewError("unusable as hash key: %s", key.Type())
 		}
 		value := Eval(valueNode, env, objectContext)
 		if isError(value) {
@@ -522,7 +522,7 @@ func evalBangOperatorExpression(right object.Object) object.Object {
 }
 func evalMinusPrefixOperatorExpression(right object.Object) object.Object {
 	if right.Type() != object.INTEGER_OBJ {
-		return newError("unknown operator: -%s", right.Type())
+		return NewError("unknown operator: -%s", right.Type())
 	}
 	value := right.(*object.Integer).Value
 	return &object.Integer{Value: -value}
@@ -538,7 +538,7 @@ func applyFunction(fn object.Object, args []object.Object, objectContext *object
 		// implement api context
 		return fn.Fn(nil, nil, args...)
 	default:
-		return newError("not a function: %s", fn.Type())
+		return NewError("not a function: %s", fn.Type())
 	}
 }
 func extendFunctionEnv(
