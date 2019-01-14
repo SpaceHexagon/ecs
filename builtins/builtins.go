@@ -1,15 +1,44 @@
-package evaluator
+package builtins
 
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/SpaceHexagon/ecs/object"
 )
 
-var builtins = map[string]*object.Builtin{
-	"puts": &object.Builtin{
-		Fn: func(args ...object.Object) object.Object {
+func newError(format string, a ...interface{}) *object.Error {
+	return &object.Error{Message: fmt.Sprintf(format, a...)}
+}
+
+var (
+	NULL  = &object.Null{}
+	TRUE  = &object.Boolean{Value: true}
+	FALSE = &object.Boolean{Value: false}
+)
+
+var ECSBuiltins = map[string]object.Object{
+	"Math": maths(),
+	"time": &object.Builtin{
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+
+			return &object.Integer{Value: time.Now().Unix()}
+		},
+	},
+	"float": &object.Builtin{
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments. got=%d, want=1", len(args))
+			}
+			if args[0].Type() != object.INTEGER_OBJ {
+				return newError("argument to `float` must be INTEGER, got %s", args[0].Type())
+			}
+			return &object.Float{Value: float64(args[0].(*object.Integer).Value)}
+		},
+	},
+	"print": &object.Builtin{
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
 			for _, arg := range args {
 				fmt.Println(arg.Inspect())
 			}
@@ -17,7 +46,7 @@ var builtins = map[string]*object.Builtin{
 		},
 	},
 	"len": &object.Builtin{
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1",
 					len(args))
@@ -35,7 +64,7 @@ var builtins = map[string]*object.Builtin{
 		},
 	},
 	"first": &object.Builtin{
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1",
 					len(args))
@@ -52,7 +81,7 @@ var builtins = map[string]*object.Builtin{
 		},
 	},
 	"last": &object.Builtin{
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1",
 					len(args))
@@ -70,7 +99,7 @@ var builtins = map[string]*object.Builtin{
 		},
 	},
 	"rest": &object.Builtin{
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("wrong number of arguments. got=%d, want=1",
 					len(args))
@@ -90,7 +119,7 @@ var builtins = map[string]*object.Builtin{
 		},
 	},
 	"push": &object.Builtin{
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
 			if len(args) != 2 {
 				return newError("wrong number of arguments. got=%d, want=2",
 					len(args))
@@ -108,7 +137,7 @@ var builtins = map[string]*object.Builtin{
 		},
 	},
 	"join": &object.Builtin{
-		Fn: func(args ...object.Object) object.Object {
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
 			if len(args) != 2 {
 				return newError("wrong number of arguments. got=%d, want=2",
 					len(args))

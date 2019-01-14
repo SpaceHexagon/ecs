@@ -17,6 +17,7 @@ type Object interface {
 
 const (
 	INTEGER_OBJ      = "INTEGER"
+	FLOAT_OBJ        = "FLOAT"
 	BOOLEAN_OBJ      = "BOOLEAN"
 	NULL_OBJ         = "NULL"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
@@ -28,11 +29,18 @@ const (
 	HASH_OBJ         = "HASH"
 )
 
-type BuiltinFunction func(args ...Object) Object
+type BuiltinFunction func(context interface{}, scope interface{}, args ...Object) Object
 type Null struct{}
 
 func (n *Null) Type() ObjectType { return NULL_OBJ }
 func (n *Null) Inspect() string  { return "null" }
+
+type Boolean struct {
+	Value bool
+}
+
+func (b *Boolean) Type() ObjectType { return BOOLEAN_OBJ }
+func (b *Boolean) Inspect() string  { return fmt.Sprintf("%t", b.Value) }
 
 type Integer struct {
 	Value int64
@@ -41,12 +49,12 @@ type Integer struct {
 func (i *Integer) Inspect() string  { return fmt.Sprintf("%d", i.Value) }
 func (i *Integer) Type() ObjectType { return INTEGER_OBJ }
 
-type Boolean struct {
-	Value bool
+type Float struct {
+	Value float64
 }
 
-func (b *Boolean) Type() ObjectType { return BOOLEAN_OBJ }
-func (b *Boolean) Inspect() string  { return fmt.Sprintf("%t", b.Value) }
+func (f *Float) Inspect() string  { return fmt.Sprintf("%f", f.Value) }
+func (f *Float) Type() ObjectType { return FLOAT_OBJ }
 
 type ReturnValue struct {
 	Value Object
@@ -56,9 +64,10 @@ func (rv *ReturnValue) Type() ObjectType { return RETURN_VALUE_OBJ }
 func (rv *ReturnValue) Inspect() string  { return rv.Value.Inspect() }
 
 type Function struct {
-	Parameters []*ast.Identifier
-	Body       *ast.BlockStatement
-	Env        *Environment
+	Parameters    []*ast.Identifier
+	Body          *ast.BlockStatement
+	Env           *Environment
+	ObjectContext Hash
 }
 
 func (f *Function) Type() ObjectType { return FUNCTION_OBJ }
@@ -120,11 +129,14 @@ type Hashable interface {
 }
 
 type HashPair struct {
-	Key   Object
-	Value Object
+	Key       Object
+	Value     Object
+	Modifiers []int64
 }
 type Hash struct {
-	Pairs map[HashKey]HashPair
+	Pairs       map[HashKey]HashPair
+	Constructor *Function
+	ClassName   string
 }
 
 func (h *Hash) Type() ObjectType { return HASH_OBJ }

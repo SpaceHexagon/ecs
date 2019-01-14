@@ -26,6 +26,10 @@ func TestNextToken(t *testing.T) {
 	"foo bar"
 	[1, 2];
 	{"foo": "bar"}
+	class Test { "Test": fn() {} }
+	new Test;
+	for (i, 3) { print(i) }
+	while (x < 10) { print(x) }
 	`
 	tests := []struct {
 		expectedType    token.TokenType
@@ -148,6 +152,49 @@ func TestNextToken(t *testing.T) {
 		{token.COLON, ":"},
 		{token.STRING, "bar"},
 		{token.RBRACE, "}"},
+
+		{token.CLASS, "class"},
+		{token.IDENT, "Test"},
+		{token.LBRACE, "{"},
+		{token.STRING, "Test"},
+		{token.COLON, ":"},
+		{token.FUNCTION, "fn"},
+		{token.LPAREN, "("},
+		{token.RPAREN, ")"},
+		{token.LBRACE, "{"},
+		{token.RBRACE, "}"},
+		{token.RBRACE, "}"},
+
+		{token.NEW, "new"},
+		{token.IDENT, "Test"},
+		{token.SEMICOLON, ";"},
+
+		{token.FOR, "for"},
+		{token.LPAREN, "("},
+		{token.IDENT, "i"},
+		{token.COMMA, ","},
+		{token.INT, "3"},
+		{token.RPAREN, ")"},
+		{token.LBRACE, "{"},
+		{token.IDENT, "print"},
+		{token.LPAREN, "("},
+		{token.IDENT, "i"},
+		{token.RPAREN, ")"},
+		{token.RBRACE, "}"},
+
+		{token.WHILE, "while"},
+		{token.LPAREN, "("},
+		{token.IDENT, "x"},
+		{token.LT, "<"},
+		{token.INT, "10"},
+		{token.RPAREN, ")"},
+		{token.LBRACE, "{"},
+		{token.IDENT, "print"},
+		{token.LPAREN, "("},
+		{token.IDENT, "x"},
+		{token.RPAREN, ")"},
+		{token.RBRACE, "}"},
+
 		{token.EOF, ""},
 	}
 
