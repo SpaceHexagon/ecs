@@ -357,13 +357,22 @@ func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 }
 
 func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
-	exp := &ast.IndexExpression{Token: p.curToken, Left: left}
+
 	p.nextToken()
-	exp.Index = p.parseExpression(LOWEST)
+	index := p.parseExpression(LOWEST)
 	if !p.expectPeek(token.RBRACKET) {
 		return nil
 	}
-	return exp
+
+	if p.peekTokenIs(token.ASSIGN) {
+		exp := &ast.IndexAssignmentExpression{Token: p.curToken, Left: left, Index: index}
+		p.nextToken()
+		p.nextToken()
+		exp.Assignment = p.parseExpression(LOWEST)
+		return exp
+	} else {
+		return &ast.IndexExpression{Token: p.curToken, Left: left, Index: index}
+	}
 }
 
 type TokenExpressionPair struct {
@@ -386,15 +395,12 @@ func (p *Parser) parseDotIndexExpression(left ast.Expression) ast.Expression {
 	}
 
 	if !p.peekTokenIs(token.ASSIGN) {
-		exp := &ast.IndexExpression{Token: bracketAndLeft.token, Left: bracketAndLeft.expression}
-		exp.Index = Index
-		return exp
+		return &ast.IndexExpression{Token: bracketAndLeft.token, Left: bracketAndLeft.expression, Index: Index}
 	} else {
-		exp := &ast.IndexAssignmentExpression{Token: bracketAndLeft.token, Left: bracketAndLeft.expression}
+		exp := &ast.IndexAssignmentExpression{Token: bracketAndLeft.token, Left: bracketAndLeft.expression, Index: Index}
 		p.nextToken()
 		p.nextToken()
 		exp.Assignment = p.parseExpression(LOWEST)
-		exp.Index = Index
 		return exp
 	}
 }
@@ -419,6 +425,10 @@ func (p *Parser) parseCallArguments() []ast.Expression {
 }
 
 func (p *Parser) parseStatement() ast.Statement {
+	if p.curToken.Type == token.IDENT && p.peekTokenIs(token.ASSIGN) {
+		return p.parseAssignmentStatement()
+	}
+
 	switch p.curToken.Type {
 	case token.LET:
 		return p.parseLetStatement()
@@ -455,7 +465,7 @@ func (p *Parser) parseNewExpression() ast.Expression {
 	if !p.expectPeek(token.IDENT) {
 		return nil
 	}
-	exp.Name = &ast.Identifier{p.curToken, p.curToken.Literal}
+	exp.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
 	return exp
 }

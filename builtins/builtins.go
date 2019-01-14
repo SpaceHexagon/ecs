@@ -26,6 +26,17 @@ var ECSBuiltins = map[string]object.Object{
 			return &object.Integer{Value: time.Now().Unix()}
 		},
 	},
+	"float": &object.Builtin{
+		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("wrong number of arguments. got=%d, want=1", len(args))
+			}
+			if args[0].Type() != object.INTEGER_OBJ {
+				return newError("argument to `float` must be INTEGER, got %s", args[0].Type())
+			}
+			return &object.Float{Value: float64(args[0].(*object.Integer).Value)}
+		},
+	},
 	"print": &object.Builtin{
 		Fn: func(context interface{}, scope interface{}, args ...object.Object) object.Object {
 			for _, arg := range args {

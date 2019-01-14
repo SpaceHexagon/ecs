@@ -106,6 +106,20 @@ func Eval(node ast.Node, env *object.Environment, objectContext *object.Hash) ob
 			return index
 		}
 		return evalIndexExpression(left, index)
+	case *ast.IndexAssignmentExpression:
+		left := Eval(node.Left, env, objectContext)
+		if isError(left) {
+			return left
+		}
+		index := Eval(node.Index, env, objectContext)
+		if isError(index) {
+			return index
+		}
+		assignment := Eval(node.Assignment, env, objectContext)
+		if isError(assignment) {
+			return assignment
+		}
+		return evalIndexAssignmentExpression(left, index, assignment)
 	case *ast.Boolean:
 		return nativeBoolToBooleanObject(node.Value)
 	case *ast.IntegerLiteral:
@@ -476,6 +490,34 @@ func evalIndexExpression(left, index object.Object) object.Object {
 		return NewError("index operator not supported: %s", left.Type())
 	}
 }
+
+func evalIndexAssignmentExpression(left, index object.Object, assignment object.Object) object.Object {
+	var (
+		indexExpType = -1
+	)
+
+	if left.Type() == object.ARRAY_OBJ && index.Type() == object.INTEGER_OBJ {
+		indexExpType = 0
+	}
+	if left.Type() == object.HASH_OBJ {
+		indexExpType = 1
+	}
+	if left.Type() == object.STRING_OBJ {
+		indexExpType = 2
+	}
+
+	switch indexExpType {
+	case 0:
+		return evalArrayIndexAssignment(left, index, assignment)
+	case 1:
+		return evalHashIndexAssignment(left, index, assignment)
+	// case 2:
+	// 	return evalStringIndexAssignment(left, index, assignment)
+	default:
+		return NewError("index operator not supported: %s", left.Type())
+	}
+}
+
 func evalArrayIndexExpression(array, index object.Object) object.Object {
 	arrayObject := array.(*object.Array)
 	idx := index.(*object.Integer).Value
@@ -496,6 +538,28 @@ func evalHashIndexExpression(hash, index object.Object) object.Object {
 		return NULL
 	}
 	return pair.Value
+}
+
+func evalArrayIndexAssignment(array, index object.Object, value object.Object) object.Object {
+	arrayObject := array.(*object.Array)
+	idx := index.(*object.Integer).Value
+	max := int64(len(arrayObject.Elements) - 1)
+	if idx < 0 || idx > max {
+		return NULL
+	}
+
+	arrayObject.Elements[idx] = value
+	return value
+}
+func evalHashIndexAssignment(hash, index object.Object, value object.Object) object.Object {
+	hashObject := hash.(*object.Hash)
+	key, ok := index.(*object.String)
+	if !ok {
+		return NewError("unusable as hash key: %s", index.Type())
+	}
+
+	hashObject.Pairs[key.HashKey()] = object.HashPair{Key: key, Value: value}
+	return NULL
 }
 func evalIdentifier(
 	node *ast.Identifier,
